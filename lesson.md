@@ -1760,23 +1760,6 @@ Microservices:
 
 ---
 
-### Advantages Recap
-
-**Microservices:**
-- ✅ Independent scaling
-- ✅ Technology diversity
-- ✅ Fault isolation
-- ✅ Fast deployment
-- ✅ Team autonomy
-
-**Challenges:**
-- ❌ Complexity
-- ❌ Network latency
-- ❌ Data consistency
-- ❌ Operations overhead
-- ❌ Testing complexity
-
----
 
 ### Real-World Examples
 
@@ -1793,25 +1776,6 @@ Microservices:
 - Gradual migration from monolith
 
 ---
-
-### Preparing for Next Lesson
-
-**In Lesson 4.16, you will:**
-1. Build 2 microservices from scratch
-   - User Service (manages users)
-   - Order Service (manages orders, calls User Service)
-2. Implement REST communication
-3. Deploy with Docker Compose
-4. Test the entire system
-
-**What you need:**
-- Understanding of concepts from today
-- Your Docker knowledge (Lesson 4.6)
-- Spring Boot basics
-- Ready to code!
-
----
-
 ## Additional Resources
 
 ### Documentation
@@ -1819,10 +1783,6 @@ Microservices:
 - [Martin Fowler on Microservices](https://martinfowler.com/articles/microservices.html)
 - [Spring Cloud Documentation](https://spring.io/projects/spring-cloud)
 
-### Books
-- "Building Microservices" by Sam Newman
-- "Microservices Patterns" by Chris Richardson
-- "Domain-Driven Design" by Eric Evans
 
 ### Videos
 - [What are Microservices?](https://www.youtube.com/results?search_query=microservices+explained)
@@ -1836,6 +1796,3 @@ Microservices:
 
 ---
 
-**Congratulations!** You now understand microservices architecture fundamentals! In the next lesson, you'll build a real microservices system! 
-
-**Next Lesson:** Lesson 4.16 - Microservices Architecture Part 2 (Practical Demo)
