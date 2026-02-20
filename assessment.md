@@ -1,68 +1,110 @@
 # Assessment / Quiz
 
-## Overview
-- **Lesson:** [title / module.lesson]
-- **Format:** 10 questions (mix MCQ / True–False / Short Answer)
-- **Time:** ~10–15 minutes
-- **Scoring:** 1 point each (unless stated)
-
 ## Questions
 
-### Q1 (MCQ)
-[Question?]  
-A. [ ]  
-B. [ ]  
-C. [ ]  
-D. [ ]  
-**Answer:** [A/B/C/D] — [1-line reason]
+### Q1 (True/False)
 
-### Q2 (MCQ)
-[Question?]  
-A. [ ]  
-B. [ ]  
-C. [ ]  
-D. [ ]  
-**Answer:** [A/B/C/D] — [1-line reason]
+Q1: A monolithic application is a single application where all components are tightly coupled and run as one unit?
 
-### Q3 (True/False)
-[Statement]  
-**Answer:** [True/False] — [1-line reason]
+A - True
 
-### Q4 (True/False)
-[Statement]  
-**Answer:** [True/False] — [1-line reason]
+B - False
 
-### Q5 (Short Answer)
-[Prompt]  
-**Expected:** [1–2 key points]
+---
 
-### Q6 (Short Answer)
-[Prompt]  
-**Expected:** [1–2 key points]
+Q2: Which of the following is an advantage of microservices architecture?
 
-### Q7 (MCQ)
-[Question?]  
-A. [ ]  
-B. [ ]  
-C. [ ]  
-D. [ ]  
-**Answer:** [A/B/C/D] — [1-line reason]
+A - Simpler to develop and test
 
-### Q8 (MCQ)
-[Question?]  
-A. [ ]  
-B. [ ]  
-C. [ ]  
-D. [ ]  
-**Answer:** [A/B/C/D] — [1-line reason]
+B - Independent scaling of services
 
-### Q9 (True/False)
-[Statement]  
-**Answer:** [True/False] — [1-line reason]
+C - No network latency
 
-### Q10 (Short Answer)
-[Prompt]  
-**Expected:** [1–2 key points]
+D - Easier to deploy
+
+---
+
+Q3: In microservices architecture, each service should have its own database rather than sharing a database?
+
+A - True
+
+B - False
+
+---
+
+Q4: What is service decomposition?
+
+A - Deleting old services
+
+B - Breaking a monolith into microservices
+
+C - Compressing service code
+
+D - Merging services together
+
+---
+
+Q5: Which communication pattern requires the calling service to wait for a response?
+
+A - Asynchronous communication
+
+B - Event-driven communication
+
+C - Synchronous communication
+
+D - Message queue communication
+
+---
+
+Q6: REST APIs use HTTP methods like GET, POST, PUT, and DELETE to perform operations on resources?
+
+A - True
+
+B - False
+
+---
+
+Q7: Which of the following is a disadvantage of microservices?
+
+A - Better fault tolerance
+
+B - Independent deployment
+
+C - Increased operational complexity
+
+D - Technology flexibility
+
+---
+
+Q8: What does the HTTP status code 404 indicate?
+
+A - Success
+
+B - Server error
+
+C - Resource not found
+
+D - Created
+
+---
+
+Q9: Configuration management in microservices is simpler than in monolithic applications?
+
+A - True
+
+B - False
+
+---
+
+Q10: When should you start with a monolithic architecture rather than microservices?
+
+A - For large teams with 50+ developers
+
+B - For small teams building an MVP
+
+C - When you need independent scaling
+
+D - When you have strong DevOps expertise
 
 ## Notes
 - Keep each question atomic and aligned to the lesson objectives.
