@@ -1,15 +1,13 @@
-# Lesson 4.15: Microservices Architecture - Part 1 
+# Lesson 4.15: Microservices Architecture - Part 1
 
 ## Learning Objectives
 
 By the end of this lesson, you will be able to:
 
-1. **Explain** the difference between monolithic and microservices architectures
-2. **Understand** when to use microservices vs monoliths
-3. **Describe** how to decompose applications into microservices
-4. **Explain** RESTful services and their role in microservices
-5. **Understand** inter-service communication patterns
-6. **Describe** configuration management in distributed systems
+1. **Explain** the difference between monolithic and microservices architectures and when to use each
+2. **Describe** how to decompose applications into microservices using business capability and domain strategies
+3. **Implement** inter-service communication using synchronous REST calls with RestTemplate
+4. **Apply** environment-based configuration management across multiple services
 
 ---
 
@@ -26,7 +24,7 @@ Before starting this lesson, ensure you have:
 
 ## Introduction
 
-So far in this module, you've built single applications (devops-demo, simple-crm). These are called **monolithic applications** - everything runs in one application.
+So far in this module, you've built single applications (devops-demo, simple-crm). These are called **monolithic applications** — everything runs in one application.
 
 But what happens when your application grows? When you have millions of users? When different teams work on different features? When you need to scale different parts differently?
 
@@ -36,7 +34,7 @@ In this lesson, you'll learn the theory behind microservices. In the next lesson
 
 ---
 
-## Part 1: Monolithic Architecture (20 minutes)
+## Part 1: Monolithic Architecture
 
 ### What is a Monolithic Application?
 
@@ -150,7 +148,7 @@ Monolith scaling = Scale EVERYTHING together
 │             │  │             │  │             │
 │ All features│  │ All features│  │ All features│
 └─────────────┘  └─────────────┘  └─────────────┘
-   
+
 Wastes resources - you scale ORDER processing even though
 only PRODUCT catalog needs scaling!
 ```
@@ -174,11 +172,6 @@ All components must use same:
 - Framework version (e.g., all Spring Boot 3.2)
 - Database (e.g., all PostgreSQL)
 
-Can't use:
-- Python for machine learning module
-- Node.js for real-time chat
-- MongoDB for product catalog
-
 **4. Team Coordination Nightmares**
 
 ```
@@ -186,8 +179,6 @@ Can't use:
 - Merge conflicts constantly
 - One team's bug breaks everyone's work
 - Difficult to assign ownership
-- Testing changes affect everyone
-- Deploy coordination needed
 ```
 
 **5. Single Point of Failure**
@@ -195,11 +186,8 @@ Can't use:
 ```
 Bug in Shipping module crashes entire application
      ↓
-Users can't:
-- Browse products ✗
-- Place orders ✗
-- Make payments ✗
-- Everything down!
+Users can't browse products, place orders, or make payments.
+Everything is down!
 ```
 
 ---
@@ -210,16 +198,8 @@ Users can't:
 - ✅ Small applications
 - ✅ Small teams (2-10 developers)
 - ✅ MVPs (Minimum Viable Products)
-- ✅ Prototypes
-- ✅ Simple requirements
+- ✅ Prototypes and simple requirements
 - ✅ Limited traffic
-
-**Examples:**
-- Internal company tools
-- Small e-commerce sites
-- Simple CRM systems
-- Portfolio websites
-- Small SaaS products
 
 **Your projects (devops-demo, simple-crm) are PERFECT as monoliths!**
 
@@ -227,24 +207,15 @@ Users can't:
 
 ### Real-World Example: Amazon's Journey
 
-**Amazon in 2001 (Monolith):**
-- Single massive application
-- Difficult to scale
-- Teams blocked each other
-- Deployments took hours
+**Amazon in 2001 (Monolith):** Single massive application. Difficult to scale, teams blocked each other, deployments took hours.
 
-**Amazon in 2006+  (Microservices):**
-- 100+ microservices
-- Each team owns services
-- Deploy independently
-- Scale independently
+**Amazon in 2006+ (Microservices):** 100+ microservices. Each team owns services, deploys independently, and scales independently.
 
-**Reference:**
-https://www.infoq.com/presentations/evolutionary-architecture-amazon/
+Reference: https://www.infoq.com/presentations/evolutionary-architecture-amazon/
 
 ---
 
-## Part 2: Microservices Architecture (25 minutes)
+## Part 2: Microservices Architecture
 
 ### What are Microservices?
 
@@ -261,8 +232,6 @@ Each service:
 
 ### E-commerce as Microservices
 
-**Same application, different architecture:**
-
 ```
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
 │User Service  │  │Product Service│ │Order Service │
@@ -277,11 +246,6 @@ Each service:
        └──────────────────┴──────────────────┘
               HTTP/REST communication
 
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│Payment Service│ │Inventory Svc  │ │Shipping Svc  │
-│   :8084      │  │    :8085      │ │    :8086     │
-└──────────────┘  └──────────────┘  └──────────────┘
-
 Each service = Independent application
 Each service = Own database
 Each service = Can be deployed separately
@@ -291,289 +255,60 @@ Each service = Can be deployed separately
 
 ### Key Characteristics of Microservices
 
-**1. Single Responsibility**
+**1. Single Responsibility** — Each service does ONE thing well.
 
-Each service does ONE thing well.
+**2. Independent Deployment** — Update one service without touching others.
 
-```
-✅ Good:
-- User Service → Manages users only
-- Product Service → Manages products only
-- Order Service → Manages orders only
+**3. Decentralized Data** — Each service owns its data. Must communicate via APIs to access other services' data.
 
-❌ Bad:
-- User-Product-Order Service → Does everything
-  (This is just a monolith!)
-```
+**4. Technology Diversity** — Different services can use different languages, frameworks, and databases.
 
-**2. Independent Deployment**
-
-```
-Update Payment Service:
-1. Build Payment Service (2 min)
-2. Test Payment Service (5 min)
-3. Deploy Payment Service (2 min)
-4. Other services keep running!
-
-Total: 9 minutes
-NO impact on other services! ✅
-```
-
-**3. Decentralized Data**
-
-Each service owns its data.
-
-```
-┌─────────────┐         ┌─────────────┐
-│User Service │         │Order Service│
-│             │         │             │
-│  Users DB   │         │  Orders DB  │
-└─────────────┘         └─────────────┘
-
-User Service CANNOT directly access Orders DB
-Order Service CANNOT directly access Users DB
-
-Must communicate via APIs!
-```
-
-**4. Technology Diversity**
-
-Different services can use different technologies:
-
-```
-User Service:     Java + Spring Boot + PostgreSQL
-Product Service:  Python + Flask + MongoDB
-Payment Service:  Node.js + Express + Redis
-Shipping Service: Go + PostgreSQL
-```
-
-Each team chooses best tool for their service!
-
-**5. Fault Isolation**
-
-```
-Payment Service crashes:
-- Users can still browse products ✅
-- Users can add to cart ✅
-- Users can view orders ✅
-- Payment fails gracefully ✗
-- Show friendly error message
-- Other services unaffected!
-```
+**5. Fault Isolation** — One service crashing does not bring down the whole system.
 
 ---
 
 ### Advantages of Microservices
 
-**1. Independent Scaling**
-
-```
-Product catalog: 10,000 requests/sec → Scale to 10 instances
-Order processing: 100 requests/sec → Run 2 instances
-
-┌────────┐ ┌────────┐ ┌────────┐ ... (10 instances)
-│Product │ │Product │ │Product │
-│Service │ │Service │ │Service │
-└────────┘ └────────┘ └────────┘
-
-┌────────┐ ┌────────┐
-│Order   │ │Order   │  (Only 2 instances)
-│Service │ │Service │
-└────────┘ └────────┘
-
-Cost-effective scaling! ✅
-```
-
-**2. Faster Development**
-
-```
-Team A works on User Service:
-- Changes don't affect Team B
-- Deploy independently
-- No coordination needed
-- Faster development
-
-Team B works on Order Service:
-- Different codebase
-- Different deployment schedule
-- Independent testing
-```
-
-**3. Technology Flexibility**
-
-```
-Old Payment Service (Java):
-- Slow
-- Complex codebase
-- Hard to maintain
-
-Rewrite in Node.js:
-- Replace ONLY Payment Service
-- Other services unchanged
-- Gradual migration possible
-```
-
-**4. Better Fault Tolerance**
-
-```
-Monolith: One bug = Entire app down
-Microservices: One service down = 90% still works
-```
-
-**5. Team Autonomy**
-
-```
-Each team owns their services:
-- Choose technology
-- Set own deployment schedule
-- Make architectural decisions
-- Responsible for their service
-```
+- **Independent Scaling** — Scale only the services that need it
+- **Faster Development** — Teams work independently with no merge conflicts
+- **Technology Flexibility** — Rewrite one service without touching others
+- **Better Fault Tolerance** — One service down ≠ entire app down
+- **Team Autonomy** — Each team owns, deploys, and decides technology for their service
 
 ---
 
 ### Disadvantages of Microservices
 
-**1. Increased Complexity**
-
-```
-Monolith:
-- 1 application to deploy
-- 1 database to manage
-- 1 server to monitor
-
-Microservices:
-- 20+ services to deploy
-- 20+ databases to manage
-- 20+ servers to monitor
-- Network communication to handle
-- Service discovery needed
-```
-
-**2. Network Latency**
-
-```
-Monolith:
-getUserOrder() → Direct method call (1ms)
-
-Microservices:
-Order Service → HTTP call to User Service (50ms)
-50x slower!
-```
-
-**3. Data Consistency Challenges**
-
-```
-Monolith:
-Database transaction ensures consistency
-
-Microservices:
-- User Service has user data
-- Order Service has order data
-- How to keep them in sync?
-- Eventual consistency needed
-```
-
-**4. Testing Complexity**
-
-```
-Monolith:
-- Test one application
-- Integration tests straightforward
-
-Microservices:
-- Test 20 services
-- Test service interactions
-- Mock external services
-- End-to-end testing complex
-```
-
-**5. Operations Overhead**
-
-```
-Need:
-- Container orchestration (Kubernetes)
-- Service mesh
-- Centralized logging
-- Distributed tracing
-- API Gateway
-- Service discovery
-- Configuration management
-
-Lot of infrastructure! 
-```
+- **Increased Complexity** — 20+ services to deploy, monitor, and manage
+- **Network Latency** — HTTP calls between services add overhead
+- **Data Consistency Challenges** — Keeping data in sync across services requires careful design
+- **Testing Complexity** — Must test service interactions, not just individual services
+- **Operations Overhead** — Requires container orchestration, centralized logging, distributed tracing, and more
 
 ---
 
 ### When to Use Microservices?
 
 **Good for:**
-- ✅ Large applications
-- ✅ Large teams (50+ developers)
-- ✅ Different scaling needs
-- ✅ Frequent deployments
-- ✅ Technology diversity needed
+- ✅ Large applications with large teams (50+ developers)
+- ✅ Different scaling needs per component
+- ✅ Frequent, independent deployments
 - ✅ High availability critical
 
-**Examples:**
-- Netflix (100+ microservices)
-- Amazon (1000+ microservices)
-- Uber (2000+ microservices)
-- Large e-commerce platforms
-- Banking systems
-- Social media platforms
-
 **NOT good for:**
-- ❌ Small applications
-- ❌ Small teams
+- ❌ Small applications and small teams
 - ❌ MVPs/Prototypes
-- ❌ Simple requirements
 - ❌ Limited operations expertise
 
----
-
-### Microservices Architecture Diagram
-
-```
-┌────────────────────────────────────────────────────────────┐
-│                  Microservices Ecosystem                    │
-└────────────────────────────────────────────────────────────┘
-
-                    ┌─────────────┐
-                    │ API Gateway │ ← Single entry point
-                    └──────┬──────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-   ┌────▼────┐       ┌────▼────┐       ┌────▼────┐
-   │ User    │       │Product  │       │ Order   │
-   │ Service │◄─────►│ Service │◄─────►│ Service │
-   └────┬────┘       └────┬────┘       └────┬────┘
-        │                 │                  │
-   ┌────▼────┐       ┌────▼────┐       ┌────▼────┐
-   │ User DB │       │Product  │       │ Order   │
-   └─────────┘       │   DB    │       │   DB    │
-                     └─────────┘       └─────────┘
-
-Each service:
-- Independent codebase
-- Own database
-- Separate deployment
-- Communicates via REST APIs
-```
-
-**Reference Image:**
-https://microservices.io/i/Microservice_Architecture.png
+**Real-world examples:** Netflix (100+), Amazon (1000+), Uber (2000+) microservices.
 
 ---
 
-## Part 3: Service Decomposition (30 minutes)
+## Part 3: Service Decomposition
 
 ### What is Service Decomposition?
 
-**Decomposition** = Breaking a monolith into microservices.
-
-**Question:** How do you decide what becomes a service?
+**Decomposition** = Breaking a monolith into microservices. The key question: **How do you decide what becomes a service?**
 
 ---
 
@@ -583,284 +318,123 @@ https://microservices.io/i/Microservice_Architecture.png
 
 Identify business functions and create services around them.
 
-**E-commerce business capabilities:**
 ```
-┌──────────────────────────────────────────┐
-│         E-commerce Business              │
-├──────────────────────────────────────────┤
-│                                          │
-│  Customer Management  → User Service     │
-│  Product Catalog      → Product Service  │
-│  Order Processing     → Order Service    │
-│  Payment Processing   → Payment Service  │
-│  Inventory Management → Inventory Service│
-│  Shipping & Delivery  → Shipping Service │
-│  Notifications        → Notification Svc │
-│                                          │
-└──────────────────────────────────────────┘
-
-Each business capability = One microservice
+Customer Management  → User Service
+Product Catalog      → Product Service
+Order Processing     → Order Service
+Payment Processing   → Payment Service
+Inventory Management → Inventory Service
+Shipping & Delivery  → Shipping Service
 ```
-
-**Benefits:**
-- ✅ Clear boundaries
-- ✅ Aligned with business
-- ✅ Easy to understand
-
----
 
 **2. Decompose by Subdomain (Domain-Driven Design)**
 
-Use Domain-Driven Design (DDD) to identify subdomains.
-
-**Example: Online Banking**
-
+Identify core vs supporting domains:
 ```
-Core Domain (Critical):
-- Account Management Service
-- Transaction Service
-- Loan Processing Service
-
-Supporting Domain:
-- Customer Support Service
-- Notification Service
-
-Generic Domain:
-- Authentication Service
-- Logging Service
+Core Domain:       Account Management, Transaction, Loan Processing
+Supporting Domain: Customer Support, Notification
+Generic Domain:    Authentication, Logging
 ```
 
-**Benefits:**
-- ✅ Focuses on core business
-- ✅ Clear priorities
-- ✅ Better resource allocation
-
----
-
-**3. Decompose by Verb/Use Case**
-
-Create services based on actions/use cases.
-
-**Example: Social Media Platform**
-
+**3. Decompose by Use Case / Verb**
 ```
-Use Cases:
-- Post Content      → Publishing Service
-- Like/Comment      → Engagement Service
-- Follow Users      → Social Graph Service
-- Search Content    → Search Service
-- Send Messages     → Messaging Service
-- Upload Media      → Media Service
+Post Content    → Publishing Service
+Like/Comment    → Engagement Service
+Search Content  → Search Service
+Send Messages   → Messaging Service
 ```
 
-**Benefits:**
-- ✅ User-centric design
-- ✅ Clear responsibilities
-- ✅ Easy to map features
-
----
-
-**4. Decompose by Noun/Resource**
-
-Create services around data entities.
-
-**Example: E-commerce**
-
+**4. Decompose by Noun / Resource**
 ```
-Resources:
-- Users             → User Service
-- Products          → Product Service
-- Orders            → Order Service
-- Reviews           → Review Service
-- Inventory         → Inventory Service
+Users      → User Service
+Products   → Product Service
+Orders     → Order Service
 ```
-
-**Benefits:**
-- ✅ Natural boundaries
-- ✅ Clear data ownership
-- ✅ Easy to understand
 
 ---
 
 ### Decomposition Best Practices
 
-**1. Start with Coarse-Grained Services**
+**1. Start coarse-grained** — Don't create a `FirstNameService` and `LastNameService`. A `UserService` that manages all user fields is the right level.
 
-❌ **Don't:**
-```
-- FirstNameService
-- LastNameService
-- EmailService
-- PhoneService
-(Too granular!)
-```
-
-✅ **Do:**
-```
-- User Service
-  - Manages first name, last name, email, phone
-  (Right granularity!)
-```
-
-**2. Consider Team Structure**
+**2. Avoid shared databases** — Services must communicate via APIs, not by reading each other's tables.
 
 ```
-Team A (5 people) → User Service + Auth Service
-Team B (5 people) → Product Service + Inventory Service
-Team C (5 people) → Order Service + Payment Service
-
-Each team owns 1-2 services
+❌ Bad:             ✅ Good:
+Both services       Each service has
+share one DB        its own DB and
+                    calls the other via API
 ```
 
-**Conway's Law:** "Organizations design systems that mirror their communication structure."
+**3. Follow Conway's Law** — "Organizations design systems that mirror their communication structure." Align services with team boundaries.
 
-**3. Identify Bounded Contexts**
-
-```
-"Customer" in different contexts:
-
-User Service:
-- Customer = Login credentials, profile
-
-Order Service:
-- Customer = Shipping address, order history
-
-Payment Service:
-- Customer = Payment methods, billing info
-
-Same concept, different data = Different services!
-```
-
-**4. Avoid Shared Databases**
-
-```
-❌ Bad:
-┌────────┐         ┌────────┐
-│User    │         │Order   │
-│Service │         │Service │
-└────┬───┘         └────┬───┘
-     └──────┬───────────┘
-         ┌──▼────┐
-         │Shared │
-         │  DB   │
-         └───────┘
-Tight coupling!
-
-✅ Good:
-┌────────┐         ┌────────┐
-│User    │         │Order   │
-│Service │◄───────►│Service │
-└────┬───┘   API   └────┬───┘
-  ┌──▼──┐           ┌───▼──┐
-  │User │           │Order │
-  │ DB  │           │  DB  │
-  └─────┘           └──────┘
-Loose coupling via APIs!
-```
-
-**5. Minimize Inter-Service Calls**
-
-```
-❌ Bad Design:
-Order Service → calls User Service
-             → calls Product Service
-             → calls Inventory Service
-             → calls Payment Service
-             → calls Shipping Service
-(5 network calls for one order!)
-
-✅ Better Design:
-Order Service → calls Payment Service only
-             → Stores necessary user/product data locally
-(1 network call, data duplication accepted)
-```
+**4. Minimise inter-service calls** — Batch calls where possible to avoid chatty communication.
 
 ---
 
 ### Example: Decomposing simple-crm
 
-**Current Monolith (simple-crm):**
+**Current Monolith:**
 ```
-┌─────────────────────────┐
-│     simple-crm.jar      │
-│                         │
-│  - CustomerController   │
-│  - InteractionController│
-│  - Repositories         │
-│  - Services             │
-│  - Database             │
-└─────────────────────────┘
+simple-crm.jar → CustomerController + InteractionController + Single Database
 ```
 
-**Decomposed into Microservices:**
+**Decomposed:**
 ```
 ┌─────────────────┐       ┌─────────────────┐
 │Customer Service │       │Interaction Svc  │
 │    :8081        │       │    :8082        │
 │                 │       │                 │
-│ - GET /customers│       │ - GET /interactions│
-│ - POST /customers│      │ - POST /interactions│
-│                 │       │                 │
+│ - GET /customers│◄──────│ Validates       │
+│ - POST /customers│      │ customer exists │
+│                 │       │ via REST call   │
 │  Customer DB    │       │  Interaction DB │
 └─────────────────┘       └─────────────────┘
-         ↑                         ↑
-         └─────────────────────────┘
-              REST communication
-
-When creating interaction:
-- Interaction Service calls Customer Service
-- Validates customer exists via API
-- Stores interaction in own DB
 ```
-
-**Benefits:**
-- Customer team works independently
-- Interaction team works independently
-- Scale each separately
-- Deploy each separately
 
 ---
 
-## Part 4: RESTful Services in Microservices (25 minutes)
+### 🧑‍💻 Activity **(15 minutes)**
+
+You are building a **School Management System**. On paper or a whiteboard, decompose it into microservices.
+
+**The system needs to handle:**
+- Student registration and profiles
+- Course creation and enrolment
+- Grade recording and reporting
+- Attendance tracking
+- Email notifications to students and parents
+
+**Your task:**
+1. Identify the microservices you would create (name them clearly)
+2. List what data each service owns
+3. Identify which services need to call each other and why
+4. Are there any services that should NOT share a database? Why?
+
+Be prepared to share and discuss your design with the class. There is no single correct answer — the goal is to think through the boundaries and justify your decisions.
+
+---
+
+## Part 4: RESTful Services in Microservices
 
 ### Why REST for Microservices?
 
-**REST (Representational State Transfer)** is the most common way microservices communicate.
-
-**Advantages:**
-- ✅ Simple and well-understood
-- ✅ HTTP-based (firewall-friendly)
-- ✅ Language-independent
-- ✅ Easy to test (Postman, curl)
-- ✅ Cacheable
-- ✅ Stateless
-
----
+REST is the most common way microservices communicate because it is simple, HTTP-based (firewall-friendly), language-independent, easy to test, and stateless.
 
 ### RESTful API Design Principles
 
 **1. Resource-Based URLs**
-
 ```
-✅ Good:
-GET    /users           - List all users
-GET    /users/123       - Get user 123
-POST   /users           - Create user
-PUT    /users/123       - Update user 123
-DELETE /users/123       - Delete user 123
+✅ GET /users          ✅ POST /users
+✅ GET /users/123      ✅ DELETE /users/123
 
-❌ Bad:
-GET    /getAllUsers
-GET    /getUserById?id=123
-POST   /createUser
-POST   /updateUser
-POST   /deleteUser
+❌ GET /getAllUsers     ❌ POST /createUser
 ```
 
 **2. Use HTTP Methods Correctly**
 
 | Method | Purpose | Example |
-|--------|---------|---------|
+|---|---|---|
 | GET | Retrieve data | GET /products |
 | POST | Create new resource | POST /products |
 | PUT | Update entire resource | PUT /products/123 |
@@ -878,102 +452,46 @@ POST   /deleteUser
 403 Forbidden       - Not authorized
 404 Not Found       - Resource not found
 500 Internal Error  - Server error
-503 Service Unavailable - Service down
 ```
 
 **4. Version Your APIs**
-
 ```
-✅ Good:
-/api/v1/users
-/api/v2/users  (when breaking changes needed)
-
-Benefits:
-- Old clients keep working
-- Gradual migration
-- Backward compatibility
+/api/v1/users  →  /api/v2/users (when breaking changes needed)
 ```
 
-**5. Use JSON for Data Exchange**
-
-```json
-{
-  "id": 123,
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john@example.com"
-}
-```
-
-**Why JSON?**
-- Human-readable
-- Language-independent
-- Easy to parse
-- Widely supported
-
----
-
-### Microservices API Example
-
-**User Service API:**
-
-```
-Base URL: http://localhost:8081
-
-GET    /api/v1/users           - Get all users
-GET    /api/v1/users/{id}      - Get user by ID
-POST   /api/v1/users           - Create user
-PUT    /api/v1/users/{id}      - Update user
-DELETE /api/v1/users/{id}      - Delete user
-```
-
-**Order Service API:**
-
-```
-Base URL: http://localhost:8082
-
-GET    /api/v1/orders          - Get all orders
-GET    /api/v1/orders/{id}     - Get order by ID
-POST   /api/v1/orders          - Create order
-GET    /api/v1/orders/user/{userId} - Get orders by user
-```
+**5. Use JSON for Data Exchange** — human-readable, language-independent, widely supported.
 
 ---
 
 ### Inter-Service Communication Example
 
-**Scenario:** Create an order
-
-**Order Service needs user information:**
+**Scenario:** Order Service needs to validate a user before creating an order.
 
 ```java
-// OrderService.java
 @Service
 public class OrderService {
-    
+
     @Value("${user.service.url}")
-    private String userServiceUrl; // http://localhost:8081
-    
+    private String userServiceUrl;
+
     private RestTemplate restTemplate = new RestTemplate();
-    
+
     public Order createOrder(Long userId, Long productId, int quantity) {
-        
-        // 1. Call User Service to validate user exists
+
+        // Call User Service to validate user exists
         String url = userServiceUrl + "/api/v1/users/" + userId;
         User user = restTemplate.getForObject(url, User.class);
-        
+
         if (user == null) {
             throw new UserNotFoundException("User not found: " + userId);
         }
-        
-        // 2. Create order
+
         Order order = new Order();
         order.setUserId(userId);
         order.setProductId(productId);
         order.setQuantity(quantity);
         order.setStatus("PENDING");
-        
-        // 3. Save to database
+
         return orderRepository.save(order);
     }
 }
@@ -987,9 +505,7 @@ Client → POST /api/v1/orders
          ↓
     GET http://localhost:8081/api/v1/users/123
          ↓
-    User Service
-         ↓
-    Returns user data
+    User Service returns user data
          ↓
     Order Service creates order
          ↓
@@ -998,324 +514,55 @@ Client → POST /api/v1/orders
 
 ---
 
-### REST Best Practices for Microservices
+## Part 5: Inter-Service Communication Patterns
 
-**1. Keep APIs Simple**
+### Pattern 1: Synchronous Communication (REST/HTTP)
 
-```
-✅ Good:
-GET /users/{id}
-
-❌ Too complex:
-GET /users/{id}/orders/{orderId}/items/{itemId}/details
-```
-
-**2. Paginate Large Results**
+Service waits for a response before continuing.
 
 ```
-GET /products?page=1&size=20
-
-Response:
-{
-  "data": [...],
-  "page": 1,
-  "size": 20,
-  "totalPages": 50
-}
+Order Service  ──GET /users/123──►  User Service
+               ◄──User data──────
 ```
 
-**3. Filter and Sort**
+**Use when:** You need an immediate response (e.g. validating a user before creating an order).
 
-```
-GET /products?category=electronics&sort=price&order=asc
-```
-
-**4. Use Clear Error Messages**
-
-```json
-{
-  "error": "User not found",
-  "message": "User with ID 123 does not exist",
-  "timestamp": "2026-02-02T10:30:00Z",
-  "status": 404
-}
-```
-
-**5. Document Your APIs**
-
-Use Swagger/OpenAPI:
-```
-http://localhost:8081/swagger-ui.html
-```
-
-Shows all endpoints, parameters, responses.
+**Pros:** Simple to implement, easy to debug, immediate feedback.
+**Cons:** If the target service is down, the calling service fails. Network latency adds up.
 
 ---
 
-## Part 5: Inter-Service Communication Patterns (30 minutes)
+### Pattern 2: Asynchronous Communication (Event-Driven)
 
-### Communication Patterns Overview
-
-Microservices need to communicate. Two main patterns:
-
-1. **Synchronous Communication** (Request-Response)
-2. **Asynchronous Communication** (Event-Driven)
-
----
-
-### Pattern 1: Synchronous Communication
-
-**Request-Response:** Service waits for response.
-
-**Example: REST/HTTP**
+Service publishes an event and continues without waiting.
 
 ```
-Order Service                     User Service
-     │                                 │
-     ├─ GET /users/123 ───────────────>│
-     │                                 │
-     │<─────── User data ──────────────┤
-     │                                 │
+Order Service  ──Publish "OrderCreated"──►  Message Queue  ──►  Email Service
+               (continues immediately)                           Inventory Service
 ```
 
-**Characteristics:**
-- Service waits for response
-- Immediate result
-- Simple to understand
-- Tight coupling
+**Use when:** You don't need an immediate response (e.g. sending a confirmation email after an order is placed).
 
-**Use when:**
-- ✅ Need immediate response
-- ✅ Simple data retrieval
-- ✅ Few services involved
+**Technologies:** RabbitMQ, Apache Kafka, AWS SQS.
 
-**Technologies:**
-- REST/HTTP
-- gRPC (faster than REST)
-- GraphQL
-
----
-
-### Synchronous Communication Example
-
-```java
-// Order Service calls User Service
-@Service
-public class OrderService {
-    
-    private RestTemplate restTemplate;
-    
-    public Order createOrder(CreateOrderRequest request) {
-        
-        // Synchronous call - waits for response
-        User user = restTemplate.getForObject(
-            "http://user-service:8081/api/v1/users/" + request.getUserId(),
-            User.class
-        );
-        
-        if (user == null) {
-            throw new Exception("User not found");
-        }
-        
-        // Create order
-        Order order = new Order();
-        order.setUserId(user.getId());
-        order.setUserEmail(user.getEmail());
-        
-        return orderRepository.save(order);
-    }
-}
-```
-
-**Pros:**
-- ✅ Simple to implement
-- ✅ Easy to debug
-- ✅ Immediate feedback
-
-**Cons:**
-- ❌ If User Service is down, Order Service fails
-- ❌ Slower (network latency)
-- ❌ Tight coupling
-
----
-
-### Pattern 2: Asynchronous Communication
-
-**Event-Driven:** Service publishes events, doesn't wait.
-
-**Example: Message Queue**
-
-```
-Order Service                     Message Queue                User Service
-     │                                 │                           │
-     ├─ Publish "OrderCreated" ───────>│                           │
-     │   event                          │                           │
-     │                                  ├─────────────────────────>│
-     │                                  │  Consume event           │
-     │                                  │                           │
-     │<─ Continue processing            │                           │
-     │                                  │                           │
-```
-
-**Characteristics:**
-- Service doesn't wait
-- Decoupled services
-- Better fault tolerance
-- More complex
-
-**Use when:**
-- ✅ Don't need immediate response
-- ✅ Long-running operations
-- ✅ Multiple services interested in event
-
-**Technologies:**
-- RabbitMQ
-- Apache Kafka
-- AWS SQS
-- Azure Service Bus
-
----
-
-### Asynchronous Communication Example
-
-```java
-// Order Service publishes event
-@Service
-public class OrderService {
-    
-    private MessagePublisher messagePublisher;
-    
-    public Order createOrder(CreateOrderRequest request) {
-        
-        // 1. Create order
-        Order order = new Order();
-        order.setUserId(request.getUserId());
-        order.setStatus("PENDING");
-        orderRepository.save(order);
-        
-        // 2. Publish event (doesn't wait!)
-        OrderCreatedEvent event = new OrderCreatedEvent(
-            order.getId(),
-            order.getUserId(),
-            LocalDateTime.now()
-        );
-        messagePublisher.publish("order.created", event);
-        
-        // 3. Return immediately
-        return order;
-    }
-}
-
-// User Service consumes event
-@Component
-public class OrderEventListener {
-    
-    @EventListener("order.created")
-    public void handleOrderCreated(OrderCreatedEvent event) {
-        // Update user statistics
-        userService.incrementOrderCount(event.getUserId());
-        
-        // Send email notification
-        emailService.sendOrderConfirmation(event.getUserId());
-    }
-}
-```
-
-**Pros:**
-- ✅ Services decoupled
-- ✅ Better fault tolerance
-- ✅ Scalable
-
-**Cons:**
-- ❌ More complex
-- ❌ Eventual consistency
-- ❌ Harder to debug
+**Pros:** Services are decoupled, better fault tolerance, scalable.
+**Cons:** More complex, eventual consistency, harder to debug.
 
 ---
 
 ### Synchronous vs Asynchronous
 
 | Aspect | Synchronous | Asynchronous |
-|--------|-------------|--------------|
+|---|---|---|
 | Coupling | Tight | Loose |
 | Response | Immediate | Eventual |
 | Complexity | Simple | Complex |
 | Fault Tolerance | Lower | Higher |
-| Use Case | Read data | Notify events |
+| Use Case | Read / validate data | Notify events |
 
-**Example:**
-
-```
-Get User Data:
-✅ Synchronous (need data now)
-
-Order Placed:
-✅ Asynchronous (notify multiple services)
-   - Email service sends confirmation
-   - Inventory service updates stock
-   - Analytics service logs event
-```
-
----
-
-### Communication Challenges
-
-**1. Network Failures**
-
-```
-Order Service → User Service
-                    ↓
-              Network timeout!
-              
-What to do?
-- Retry with exponential backoff
-- Circuit breaker pattern
-- Fallback response
-```
-
-**2. Service Discovery**
-
-```
-Problem: Services run on different machines with different IPs
-
-Order Service needs User Service:
-❌ Hardcode: http://192.168.1.100:8081
-❌ Changes when redeployed!
-
-✅ Service Discovery:
-   - Services register with registry
-   - Query registry for service location
-   - Dynamic discovery
-```
-
-**3. Load Balancing**
-
-```
-Multiple instances of User Service:
-
-┌────────┐ ┌────────┐ ┌────────┐
-│User    │ │User    │ │User    │
-│Service │ │Service │ │Service │
-│:8081   │ │:8082   │ │:8083   │
-└────────┘ └────────┘ └────────┘
-
-Which one to call?
-- Round robin
-- Least connections
-- Random
-```
-
-**4. Data Consistency**
-
-```
-Order created in Order Service
-User statistics in User Service
-
-How to keep in sync?
-- Eventual consistency (async events)
-- Saga pattern (distributed transactions)
-- CQRS (separate read/write models)
-```
+**Rule of thumb:**
+- Need data right now → Synchronous (REST)
+- Notifying multiple services of an event → Asynchronous (Events)
 
 ---
 
@@ -1324,13 +571,9 @@ How to keep in sync?
 **1. Use Timeouts**
 
 ```java
-RestTemplate restTemplate = new RestTemplate();
-
-// Set timeout
 SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
 factory.setConnectTimeout(3000); // 3 seconds
-factory.setReadTimeout(3000);    // 3 seconds
-
+factory.setReadTimeout(3000);
 restTemplate.setRequestFactory(factory);
 ```
 
@@ -1347,92 +590,42 @@ public User getUserById(Long userId) {
 }
 ```
 
-**3. Use Circuit Breaker**
+**3. Circuit Breaker (Optional — Advanced)**
 
-```
-Closed State → Service works normally
-               ↓
-         Multiple failures
-               ↓
-Open State   → Stop calling service (fail fast)
-               ↓
-         Wait timeout
-               ↓
-Half-Open    → Try one request
-               ↓
-         Success → Back to Closed
-         Failure → Back to Open
-```
-
-**4. Minimize Inter-Service Calls**
-
-```
-❌ Chatty:
-For each order item:
-  - Call Product Service
-  - Call Inventory Service
-  - Call Pricing Service
-(3 calls per item, 10 items = 30 calls!)
-
-✅ Batch:
-  - Call Product Service with all IDs (1 call)
-  - Call Inventory Service with all IDs (1 call)
-  - Call Pricing Service with all IDs (1 call)
-(3 calls total)
-```
+Stops calling a failing service to prevent cascading failures. Implemented with libraries like Resilience4j. Not required for this module — covered in advanced DevOps topics.
 
 ---
 
-## Part 6: Configuration Management (25 minutes)
+## Part 6: Configuration Management
 
 ### The Configuration Challenge
 
-Each microservice needs configuration:
-- Database URLs
-- API keys
-- Service URLs
-- Feature flags
-- Environment-specific settings
-
-**Problem:**
-- 20 microservices = 20 configuration files
-- Different values per environment (dev, staging, prod)
-- How to update without redeploying?
+Each microservice needs configuration — database URLs, API keys, service URLs, feature flags. With 20 services across multiple environments, managing this becomes a real challenge.
 
 ---
 
-### Configuration Approaches
-
-**1. Application Properties (Simple)**
+### Approach 1: Application Properties (Simple)
 
 ```properties
-# application.properties
 server.port=8081
 spring.datasource.url=jdbc:postgresql://localhost:5432/users
 user.service.url=http://localhost:8081
 ```
 
-**Pros:**
-- ✅ Simple
-- ✅ Built into Spring Boot
-
-**Cons:**
-- ❌ Hardcoded in JAR
-- ❌ Must rebuild/redeploy to change
-- ❌ Different values per environment
+**Pros:** Simple, built into Spring Boot.
+**Cons:** Hardcoded in the JAR — must rebuild and redeploy to change values.
 
 ---
 
-**2. Environment Variables (Better)**
+### Approach 2: Environment Variables (Recommended)
 
 ```properties
-# application.properties
 server.port=${SERVER_PORT:8081}
 spring.datasource.url=${DATABASE_URL}
 user.service.url=${USER_SERVICE_URL}
 ```
 
-**Set via Docker Compose:**
+Set values via Docker Compose:
 
 ```yaml
 services:
@@ -1443,291 +636,68 @@ services:
       USER_SERVICE_URL: http://user-service:8081
 ```
 
-**Pros:**
-- ✅ No rebuild needed
-- ✅ Different per environment
-- ✅ Docker-friendly
+**Pros:** No rebuild needed, different values per environment, Docker-friendly.
+**Cons:** Must restart the service to change values.
 
-**Cons:**
-- ❌ Must restart service to change
-- ❌ Hard to manage many variables
+This is the approach we use in Lesson 4.16.
 
 ---
 
-**3. External Configuration Files**
+### Approach 3: Configuration Server (Optional — Advanced)
 
-**Mount configuration files:**
-
-```yaml
-# docker-compose.yml
-services:
-  order-service:
-    volumes:
-      - ./config/application-prod.properties:/app/config/application.properties
-```
-
-**Pros:**
-- ✅ Easy to update
-- ✅ Version controlled
-
-**Cons:**
-- ❌ Still need restart
-- ❌ File management overhead
-
----
-
-**4. Configuration Server (Advanced)**
-
-**Spring Cloud Config Server:**
-
-```
-┌────────────────┐
-│  Config Server │ ← Centralized configuration
-│   :8888        │
-└────────┬───────┘
-         │
-    ┌────┴─────┬──────────┬─────────┐
-    │          │          │         │
-┌───▼───┐  ┌──▼───┐  ┌───▼───┐  ┌──▼───┐
-│User   │  │Order │  │Product│  │Payment│
-│Service│  │Service│  │Service│  │Service│
-└───────┘  └──────┘  └───────┘  └──────┘
-
-All services fetch config from Config Server
-```
-
-**Features:**
-- Centralized configuration
-- Dynamic refresh (no restart!)
-- Environment-specific configs
-- Version history
-
-**Cons:**
-- Additional infrastructure
-- More complexity
-- Single point of failure (if not HA)
+Spring Cloud Config Server provides centralised configuration with dynamic refresh — no restart needed. This is additional infrastructure and adds complexity. It is optional and not required for this module.
 
 ---
 
 ### Configuration Best Practices
 
-**1. Use Profiles**
-
-```properties
-# application.properties (common)
-server.port=8080
-
-# application-dev.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/dev_db
-
-# application-prod.properties
-spring.datasource.url=jdbc:postgresql://prod-db:5432/prod_db
-```
-
-**Activate profile:**
-```bash
-java -jar app.jar --spring.profiles.active=prod
-```
-
-**2. Use Default Values**
-
+**1. Use default values**
 ```properties
 server.port=${SERVER_PORT:8080}
 # If SERVER_PORT not set, use 8080
 ```
 
-**3. Externalize Secrets**
-
-❌ **Never:**
+**2. Never hardcode secrets**
 ```properties
+# ❌ Never do this:
 database.password=mySecretPassword123
-```
 
-✅ **Do:**
-```properties
+# ✅ Always do this:
 database.password=${DATABASE_PASSWORD}
 ```
 
-**Set via:**
-- Environment variables
-- Secrets management (HashiCorp Vault, AWS Secrets Manager)
-- Kubernetes Secrets
+**3. Use Spring profiles for environment-specific settings**
+```bash
+java -jar app.jar --spring.profiles.active=prod
+```
 
-**4. Validate Configuration**
-
+**4. Validate configuration at startup**
 ```java
 @Configuration
 @Validated
 public class ServiceConfig {
-    
+
     @NotNull
     @Value("${user.service.url}")
     private String userServiceUrl;
-    
-    @Min(1000)
-    @Max(9999)
-    @Value("${server.port}")
-    private int serverPort;
 }
 ```
 
-Application fails to start if config invalid!
-
-**5. Document Configuration**
-
-```properties
-# Server Configuration
-# Port on which service listens (default: 8080)
-server.port=${SERVER_PORT:8080}
-
-# Database Configuration
-# PostgreSQL database URL
-# Format: jdbc:postgresql://host:port/database
-spring.datasource.url=${DATABASE_URL}
-```
+Application fails to start if required config is missing — catches errors early.
 
 ---
 
-### Configuration in Docker Compose
+## Part 7: Microservices Challenges — Awareness Overview
 
-**Example: Order Service Configuration**
+> ℹ️ This section is an **awareness overview only**. These are real challenges in production microservices systems. You do not need to implement any of these in this module — they are covered in more advanced DevOps and architecture topics.
 
-```yaml
-version: "3.9"
+**Distributed Tracing** — When a request spans multiple services, tracing which service caused a failure or slowdown requires tools like Zipkin or Jaeger.
 
-services:
-  order-service:
-    build: ./order-service
-    ports:
-      - "8082:8080"
-    environment:
-      # Server config
-      SERVER_PORT: 8080
-      
-      # Database config
-      DATABASE_URL: jdbc:postgresql://order-db:5432/orders
-      DATABASE_USERNAME: orderuser
-      DATABASE_PASSWORD: orderpass
-      
-      # Other service URLs
-      USER_SERVICE_URL: http://user-service:8081
-      PRODUCT_SERVICE_URL: http://product-service:8083
-      
-      # Feature flags
-      ENABLE_CACHING: "true"
-      ENABLE_METRICS: "true"
-    
-    depends_on:
-      - order-db
-      - user-service
-      - product-service
-  
-  order-db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: orders
-      POSTGRES_USER: orderuser
-      POSTGRES_PASSWORD: orderpass
-```
+**Centralized Logging** — With 20+ services each producing log files, you need a centralized solution (ELK Stack, Splunk) to search and correlate logs across services.
 
-**Benefits:**
-- ✅ Clear configuration
-- ✅ Easy to modify
-- ✅ Version controlled
-- ✅ Environment-specific
+**Data Consistency** — Distributed transactions are hard. If an order is placed but inventory update fails, you have an inconsistent state. The Saga pattern provides a solution.
 
----
-
-## Part 7: Microservices Challenges (10 minutes)
-
-### Distributed System Challenges
-
-**1. Distributed Tracing**
-
-```
-User Request
-    ↓
-API Gateway
-    ↓
-Order Service → User Service
-    ↓
-Payment Service → Bank API
-
-Where did the request fail?
-Which service is slow?
-
-Solution: Distributed tracing (Zipkin, Jaeger)
-- Traces request across services
-- Shows timing for each hop
-- Identifies bottlenecks
-```
-
-**2. Monitoring and Logging**
-
-```
-Monolith:
-- One log file
-- Easy to search
-
-Microservices:
-- 20+ log files
-- Scattered across services
-- Hard to correlate
-
-Solution: Centralized logging (ELK Stack, Splunk)
-- Aggregate logs from all services
-- Searchable
-- Correlated by request ID
-```
-
-**3. Data Consistency**
-
-```
-Order created → Payment processed → Inventory updated
-
-What if Payment succeeds but Inventory update fails?
-- Inconsistent state!
-- Order shows paid, but items not reserved
-
-Solution: Saga pattern
-- Distributed transaction management
-- Compensating transactions on failure
-```
-
-**4. Testing Complexity**
-
-```
-Monolith:
-- Test one application
-- Integration tests straightforward
-
-Microservices:
-- Test 20 services
-- Test service interactions
-- Mock dependencies
-- Contract testing needed
-```
-
----
-
-### When NOT to Use Microservices
-
-**Don't use microservices if:**
-
-❌ You have a small team (< 10 developers)
-❌ Your application is small/medium sized
-❌ You're building an MVP
-❌ You lack DevOps expertise
-❌ You don't need independent scaling
-❌ You can't afford the operational overhead
-
-**Start with a monolith:**
-1. Build monolith
-2. Understand domain
-3. Identify boundaries
-4. Extract services when needed
-
-**"You can't build microservices if you can't build a monolith."**
+**Testing Complexity** — Integration tests must cover service interactions. Contract testing (Pact) helps ensure services remain compatible.
 
 ---
 
@@ -1735,64 +705,30 @@ Microservices:
 
 ### Key Concepts
 
-**1. Monolith vs Microservices**
-- Monolith = One application, simple but limited scaling
-- Microservices = Many services, complex but flexible
-
-**2. When to Use Each**
-- Monolith: Small teams, simple apps, MVPs
-- Microservices: Large teams, complex apps, high scale
-
-**3. Decomposition Strategies**
-- By business capability
-- By subdomain (DDD)
-- By use case
-- By resource
-
-**4. Communication**
-- Synchronous (REST) for immediate responses
-- Asynchronous (Events) for decoupling
-
-**5. Configuration**
-- Environment variables
-- External config files
-- Configuration servers (advanced)
-
----
-
+| Topic | Key Point |
+|---|---|
+| Monolith vs Microservices | Monolith = simple but limited; Microservices = flexible but complex |
+| When to use each | Monolith for small teams/apps; Microservices for large teams/scale |
+| Decomposition | Break by business capability, subdomain, use case, or resource |
+| Communication | Synchronous (REST) for immediate data; Asynchronous (Events) for notifications |
+| Configuration | Use environment variables; never hardcode secrets |
 
 ### Real-World Examples
 
-**Companies Using Microservices:**
-- Netflix: 100+ microservices
-- Amazon: 1000+ microservices
-- Uber: 2000+ microservices
-- Spotify: Hundreds of microservices
+**Companies using microservices:** Netflix (100+), Amazon (1000+), Uber (2000+), Spotify (hundreds).
 
-**Success Factors:**
-- Large engineering teams
-- DevOps culture
-- Strong tooling
-- Gradual migration from monolith
+**Success factors:** Large engineering teams, DevOps culture, strong tooling, gradual migration from monolith.
+
+**"You can't build microservices if you can't build a monolith."**
 
 ---
+
 ## Additional Resources
 
-### Documentation
-- [Microservices.io](https://microservices.io/) - Patterns and best practices
+- [Microservices.io](https://microservices.io/) — Patterns and best practices
 - [Martin Fowler on Microservices](https://martinfowler.com/articles/microservices.html)
 - [Spring Cloud Documentation](https://spring.io/projects/spring-cloud)
 
-
-### Videos
-- [What are Microservices?](https://www.youtube.com/results?search_query=microservices+explained)
-- [Microservices vs Monolith](https://www.youtube.com/results?search_query=microservices+vs+monolith)
-- [Netflix Microservices Architecture](https://www.youtube.com/results?search_query=netflix+microservices)
-
-### Reference Diagrams
-- [Microservices Architecture](https://microservices.io/i/Microservice_Architecture.png)
-- [Monolith vs Microservices](https://www.redhat.com/rhdc/managed-files/monolithic-vs-microservices.png)
-- [Communication Patterns](https://microservices.io/patterns/communication-style/messaging.html)
-
 ---
 
+END
